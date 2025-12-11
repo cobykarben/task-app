@@ -16,6 +16,11 @@ export function useSubscription(): UseSubscriptionReturn {
         }
       );
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || "Failed to manage subscription");
+      }
+
       const data = await response.json();
       if (data.error) throw new Error(data.error);
 

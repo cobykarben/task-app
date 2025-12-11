@@ -54,12 +54,12 @@ const TaskRow = ({ task, onDelete, onToggleComplete }: TaskRowProps) => {
         {task.due_date ? formatDate(task.due_date) : ""}
       </TableCell>
       <TableCell className="text-right py-2">
-        <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-          <Link href={`/task?id=${task.task_id}`}>
+        <Link href={`/task?id=${task.task_id}`}>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <Edit className="h-4 w-4" />
             <span className="sr-only">Edit</span>
-          </Link>
-        </Button>
+          </Button>
+        </Link>
         <Button
           variant="ghost"
           size="icon"
