@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { title, description } = await req.json();
+    const { title, description, label: providedLabel, due_date } = await req.json();
 
     console.log("🔄 Creating task with AI suggestions...");
     const authHeader = req.headers.get("Authorization");
@@ -50,15 +50,17 @@ Deno.serve(async (req) => {
         description,
         completed: false,
         user_id: user.id,
+        label: providedLabel || null,
+        due_date: due_date || null,
       })
       .select()
       .single();
 
     if (error) throw error;
 
-    // Try to get AI label suggestion (optional - don't fail if this doesn't work)
-    let label = null;
-    if (OPENAI_API_KEY) {
+    // Try to get AI label suggestion only if no label was provided (optional - don't fail if this doesn't work)
+    let label = providedLabel || null;
+    if (!providedLabel && OPENAI_API_KEY) {
       try {
         const openai = new OpenAI({
           apiKey: OPENAI_API_KEY,

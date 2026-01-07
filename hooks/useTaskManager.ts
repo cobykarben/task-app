@@ -169,7 +169,13 @@ export function useTaskManager(taskId?: string): UseTaskManagerReturn {
     }
   };
 
-  const createTask = async (title: string, description: string) => {
+  const createTask = async (
+    title: string,
+    description: string,
+    label: Task["label"] | null = null,
+    dueDate: Date | undefined = undefined,
+    imageFile: File | null = null
+  ) => {
     try {
       const {
         data: { session },
@@ -181,7 +187,12 @@ export function useTaskManager(taskId?: string): UseTaskManagerReturn {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session!.access_token}`,
         },
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({
+          title,
+          description,
+          label: label || undefined,
+          due_date: dueDate ? dueDate.toISOString().split("T")[0] : undefined,
+        }),
       });
 
       if (!response.ok) {
@@ -191,6 +202,46 @@ export function useTaskManager(taskId?: string): UseTaskManagerReturn {
 
       const taskData = await response.json();
       if (!taskData) throw new Error("No data returned from server");
+
+      // Upload image if provided
+      if (imageFile && taskData.task_id) {
+        try {
+          if (imageFile.size > MAX_FILE_SIZE) {
+            throw new Error("File size must be less than 1MB");
+          }
+
+          const fileExt = imageFile.name.split(".").pop();
+          const fileName = `${taskData.user_id}/${taskData.task_id}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from("task-attachments")
+            .upload(fileName, imageFile, {
+              upsert: true,
+              contentType: imageFile.type,
+              duplex: "half",
+              headers: {
+                "content-length": imageFile.size.toString(),
+              },
+            });
+
+          if (uploadError) throw uploadError;
+
+          // Update task with image URL
+          const { data: updatedTask, error: updateError } = await supabase
+            .from("tasks")
+            .update({ image_url: fileName })
+            .eq("task_id", taskData.task_id)
+            .select()
+            .single();
+
+          if (!updateError && updatedTask) {
+            taskData.image_url = fileName;
+          }
+        } catch (imageError: any) {
+          console.error("Error uploading image:", imageError);
+          // Don't fail task creation if image upload fails
+        }
+      }
 
       setTasks([taskData, ...tasks]);
       setError(null);
@@ -248,6 +299,60 @@ export function useTaskManager(taskId?: string): UseTaskManagerReturn {
     await fetchTasks();
   };
 
+  const createTaskFromImage = async (imageFile: File) => {
+    try {
+      setIsLoading(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
+
+      // Convert image to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+      });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-task-from-image`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ imageBase64: base64 }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create task from image");
+      }
+
+      const taskData = await response.json();
+      if (!taskData) throw new Error("No data returned from server");
+
+      setTasks([taskData, ...tasks]);
+      setError(null);
+      return taskData;
+    } catch (error: any) {
+      console.error("Error creating task from image:", error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     // State
     task,
@@ -265,6 +370,7 @@ export function useTaskManager(taskId?: string): UseTaskManagerReturn {
 
     // Task list operations
     createTask,
+    createTaskFromImage,
     deleteTask,
     toggleTaskComplete,
     refreshTasks,

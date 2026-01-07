@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import TaskList from "@/components/TaskList";
 import { CreateTaskForm } from "@/components/CreateTaskForm";
 import { PlusCircle, ClipboardList } from "lucide-react";
+import { Task } from "@/types/models";
 import {
   Dialog,
   DialogContent,
@@ -17,13 +18,26 @@ import {
 
 export default function Dashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { createTask, refreshTasks, tasks, deleteTask, toggleTaskComplete } =
+  const { createTask, createTaskFromImage, refreshTasks, tasks, deleteTask, toggleTaskComplete } =
     useTaskManager();
 
-  const handleCreateTask = async (title: string, description: string) => {
-    await createTask(title, description);
+  const handleCreateTask = async (
+    title: string,
+    description: string,
+    label: Task["label"] | null,
+    dueDate: Date | undefined,
+    imageFile: File | null
+  ) => {
+    await createTask(title, description, label, dueDate, imageFile);
     await refreshTasks();
     console.log(`New Task Created: ${title}`);
+    setIsDialogOpen(false);
+  };
+
+  const handleImageToTask = async (imageFile: File) => {
+    await createTaskFromImage(imageFile);
+    await refreshTasks();
+    console.log(`Task created from image: ${imageFile.name}`);
     setIsDialogOpen(false);
   };
 
@@ -45,7 +59,7 @@ export default function Dashboard() {
                 Enter the details for your new task below.
               </DialogDescription>
             </DialogHeader>
-            <CreateTaskForm onSubmit={handleCreateTask} />
+            <CreateTaskForm onSubmit={handleCreateTask} onImageUpload={handleImageToTask} />
           </DialogContent>
         </Dialog>
       </div>
