@@ -180,7 +180,7 @@ export function useTaskManager(taskId?: string): UseTaskManagerReturn {
     title: string,
     description: string,
     label: Task["label"] | null = null,
-    priority: "low" | "medium" | "high" | "urgent" | null = null,
+    priority: "--" | "!" | "!!" | "!!!" | null = "--",
     estimatedDuration: number | null = null,
     dueDate: Date | undefined = undefined,
     imageFile: File | null = null
@@ -200,7 +200,7 @@ export function useTaskManager(taskId?: string): UseTaskManagerReturn {
           title,
           description,
           label: label || undefined,
-          priority: priority || undefined,
+          priority: priority || "--",
           estimated_duration: estimatedDuration || undefined,
           due_date: dueDate ? dueDate.toISOString().split("T")[0] : undefined,
         }),

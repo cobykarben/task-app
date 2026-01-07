@@ -28,7 +28,7 @@ interface CreateTaskFormProps {
     title: string,
     description: string,
     label: Task["label"] | null,
-    priority: "low" | "medium" | "high" | "urgent" | null,
+    priority: "--" | "!" | "!!" | "!!!" | null,
     estimatedDuration: number | null,
     dueDate: Date | undefined,
     imageFile: File | null
@@ -40,7 +40,7 @@ export function CreateTaskForm({ onSubmit, onImageUpload }: CreateTaskFormProps)
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [label, setLabel] = useState<Task["label"] | null>(null);
-  const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent" | null>(null);
+  const [priority, setPriority] = useState<"--" | "!" | "!!" | "!!!" | null>("--");
   const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -91,7 +91,7 @@ export function CreateTaskForm({ onSubmit, onImageUpload }: CreateTaskFormProps)
       setTitle("");
       setDescription("");
       setLabel(null);
-      setPriority(null);
+      setPriority("--");
       setEstimatedDuration(null);
       setDueDate(undefined);
       setImageFile(null);
@@ -225,20 +225,19 @@ export function CreateTaskForm({ onSubmit, onImageUpload }: CreateTaskFormProps)
       <div className="grid w-full items-center gap-1.5">
         <Label>Priority</Label>
         <Select
-          value={priority || undefined}
+          value={priority || "--"}
           onValueChange={(value) =>
-            setPriority(value === "clear" ? null : (value as "low" | "medium" | "high" | "urgent"))
+            setPriority(value as "--" | "!" | "!!" | "!!!")
           }
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select priority" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-            <SelectItem value="clear">Clear</SelectItem>
+            <SelectItem value="--">-- (None)</SelectItem>
+            <SelectItem value="!">! (Low)</SelectItem>
+            <SelectItem value="!!">!! (Medium)</SelectItem>
+            <SelectItem value="!!!">!!! (High)</SelectItem>
           </SelectContent>
         </Select>
       </div>

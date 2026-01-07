@@ -233,20 +233,19 @@ function TaskForm() {
         <div className="grid w-full items-center gap-1.5">
           <Label>Priority</Label>
           <Select
-            value={(task as any).priority || undefined}
+            value={(task as any).priority || "--"}
             onValueChange={(value) =>
-              updateTask({ priority: value === "clear" ? null : value } as any)
+              updateTask({ priority: value } as any)
             }
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select priority" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="urgent">Urgent</SelectItem>
-              <SelectItem value="clear">Clear</SelectItem>
+              <SelectItem value="--">-- (None)</SelectItem>
+              <SelectItem value="!">! (Low)</SelectItem>
+              <SelectItem value="!!">!! (Medium)</SelectItem>
+              <SelectItem value="!!!">!!! (High)</SelectItem>
             </SelectContent>
           </Select>
         </div>

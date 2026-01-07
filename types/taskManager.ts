@@ -23,7 +23,7 @@ export interface TasksOperations {
     title: string,
     description: string,
     label?: Task["label"] | null,
-    priority?: "low" | "medium" | "high" | "urgent" | null,
+    priority?: "--" | "!" | "!!" | "!!!" | null,
     estimatedDuration?: number | null,
     dueDate?: Date | undefined,
     imageFile?: File | null

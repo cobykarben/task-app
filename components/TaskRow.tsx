@@ -51,6 +51,11 @@ const TaskRow = ({ task, onDelete, onToggleComplete }: TaskRowProps) => {
         )}
       </TableCell>
       <TableCell className="py-2 whitespace-nowrap">
+        <span className="font-mono text-lg">
+          {(task as any).priority || "--"}
+        </span>
+      </TableCell>
+      <TableCell className="py-2 whitespace-nowrap">
         {task.due_date ? formatDate(task.due_date) : ""}
       </TableCell>
       <TableCell className="text-right py-2">

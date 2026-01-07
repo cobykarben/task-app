@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     if (!user) throw new Error("No user found");
 
     // Create the task (initially with manual source, will update if AI suggests label)
-    const validPriorities = ["low", "medium", "high", "urgent"];
+    const validPriorities = ["--", "!", "!!", "!!!"];
     const { data, error } = await supabaseClient
       .from("tasks")
       .insert({
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
         completed: false,
         user_id: user.id,
         label: providedLabel || null,
-        priority: priority && validPriorities.includes(priority) ? priority : null,
+        priority: priority && validPriorities.includes(priority) ? priority : "--",
         estimated_duration: estimated_duration || null,
         due_date: due_date || null,
         created_via: "manual", // Will update to 'ai_suggestion' if AI suggests label
