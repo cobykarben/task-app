@@ -225,9 +225,9 @@ export function CreateTaskForm({ onSubmit, onImageUpload }: CreateTaskFormProps)
       <div className="grid w-full items-center gap-1.5">
         <Label>Priority</Label>
         <Select
-          value={priority || ""}
+          value={priority || undefined}
           onValueChange={(value) =>
-            setPriority(value ? (value as "low" | "medium" | "high" | "urgent") : null)
+            setPriority(value === "clear" ? null : (value as "low" | "medium" | "high" | "urgent"))
           }
         >
           <SelectTrigger className="w-full">
@@ -238,7 +238,7 @@ export function CreateTaskForm({ onSubmit, onImageUpload }: CreateTaskFormProps)
             <SelectItem value="medium">Medium</SelectItem>
             <SelectItem value="high">High</SelectItem>
             <SelectItem value="urgent">Urgent</SelectItem>
-            <SelectItem value="">None</SelectItem>
+            <SelectItem value="clear">Clear</SelectItem>
           </SelectContent>
         </Select>
       </div>

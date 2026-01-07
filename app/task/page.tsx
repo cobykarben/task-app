@@ -233,9 +233,9 @@ function TaskForm() {
         <div className="grid w-full items-center gap-1.5">
           <Label>Priority</Label>
           <Select
-            value={(task as any).priority || ""}
+            value={(task as any).priority || undefined}
             onValueChange={(value) =>
-              updateTask({ priority: value || null } as any)
+              updateTask({ priority: value === "clear" ? null : value } as any)
             }
           >
             <SelectTrigger className="w-full">
@@ -246,7 +246,7 @@ function TaskForm() {
               <SelectItem value="medium">Medium</SelectItem>
               <SelectItem value="high">High</SelectItem>
               <SelectItem value="urgent">Urgent</SelectItem>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="clear">Clear</SelectItem>
             </SelectContent>
           </Select>
         </div>
