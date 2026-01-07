@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { title, description, label: providedLabel, due_date } = await req.json();
+    const { title, description, label: providedLabel, priority, estimated_duration, due_date } = await req.json();
 
     console.log("🔄 Creating task with AI suggestions...");
     const authHeader = req.headers.get("Authorization");
@@ -42,7 +42,8 @@ Deno.serve(async (req) => {
     } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("No user found");
 
-    // Create the task
+    // Create the task (initially with manual source, will update if AI suggests label)
+    const validPriorities = ["low", "medium", "high", "urgent"];
     const { data, error } = await supabaseClient
       .from("tasks")
       .insert({
@@ -51,7 +52,10 @@ Deno.serve(async (req) => {
         completed: false,
         user_id: user.id,
         label: providedLabel || null,
+        priority: priority && validPriorities.includes(priority) ? priority : null,
+        estimated_duration: estimated_duration || null,
         due_date: due_date || null,
+        created_via: "manual", // Will update to 'ai_suggestion' if AI suggests label
       })
       .select()
       .single();
@@ -60,6 +64,7 @@ Deno.serve(async (req) => {
 
     // Try to get AI label suggestion only if no label was provided (optional - don't fail if this doesn't work)
     let label = providedLabel || null;
+    let createdVia = "manual";
     if (!providedLabel && OPENAI_API_KEY) {
       try {
         const openai = new OpenAI({
@@ -86,11 +91,12 @@ Deno.serve(async (req) => {
         const validLabels = ["work", "personal", "priority", "shopping", "home"];
         label = validLabels.includes(suggestedLabel) ? suggestedLabel : null;
 
-        // Update the task with the suggested label if we got one
+        // Update the task with the suggested label and created_via if we got one
         if (label) {
+          createdVia = "ai_suggestion";
           const { data: updatedTask, error: updateError } = await supabaseClient
             .from("tasks")
-            .update({ label })
+            .update({ label, created_via: createdVia })
             .eq("task_id", data.task_id)
             .select()
             .single();

@@ -28,6 +28,8 @@ interface CreateTaskFormProps {
     title: string,
     description: string,
     label: Task["label"] | null,
+    priority: "low" | "medium" | "high" | "urgent" | null,
+    estimatedDuration: number | null,
     dueDate: Date | undefined,
     imageFile: File | null
   ) => Promise<void>;
@@ -38,6 +40,8 @@ export function CreateTaskForm({ onSubmit, onImageUpload }: CreateTaskFormProps)
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [label, setLabel] = useState<Task["label"] | null>(null);
+  const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent" | null>(null);
+  const [estimatedDuration, setEstimatedDuration] = useState<number | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -83,10 +87,12 @@ export function CreateTaskForm({ onSubmit, onImageUpload }: CreateTaskFormProps)
     setError(null);
     setIsSubmitting(true);
     try {
-      await onSubmit(title, description, label, dueDate, imageFile);
+      await onSubmit(title, description, label, priority, estimatedDuration, dueDate, imageFile);
       setTitle("");
       setDescription("");
       setLabel(null);
+      setPriority(null);
+      setEstimatedDuration(null);
       setDueDate(undefined);
       setImageFile(null);
     } catch (err) {
@@ -215,6 +221,38 @@ export function CreateTaskForm({ onSubmit, onImageUpload }: CreateTaskFormProps)
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="grid w-full items-center gap-1.5">
+        <Label>Priority</Label>
+        <Select
+          value={priority || ""}
+          onValueChange={(value) =>
+            setPriority(value ? (value as "low" | "medium" | "high" | "urgent") : null)
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="urgent">Urgent</SelectItem>
+            <SelectItem value="">None</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid w-full items-center gap-1.5">
+        <Label>Estimated Duration (minutes)</Label>
+        <Input
+          type="number"
+          min="0"
+          placeholder="e.g., 30, 120"
+          value={estimatedDuration || ""}
+          onChange={(e) =>
+            setEstimatedDuration(e.target.value ? parseInt(e.target.value) : null)
+          }
+        />
       </div>
       <div className="grid w-full items-center gap-1.5">
         <Label>Due Date</Label>

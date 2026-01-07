@@ -80,13 +80,27 @@ Return ONLY a valid JSON object with this exact structure:
   "title": "the task title or name",
   "description": "any additional description or notes (optional, can be null)",
   "due_date": "YYYY-MM-DD format if a date is mentioned, otherwise null",
-  "label": "one of these exact values if mentioned: work, personal, priority, shopping, home, or null if not specified"
+  "label": "one of these exact values if mentioned: work, personal, priority, shopping, home, or null if not specified",
+  "priority": "one of these exact values: low, medium, high, urgent, or null if not specified",
+  "estimated_duration": "integer number of minutes, or null if not specified"
 }
 
 Rules:
 - Extract the main task/title clearly - this is required
 - If a date is written, parse it to YYYY-MM-DD format (e.g., "Jan 15" becomes "2025-01-15", "next Friday" should be calculated to actual date)
 - For labels, match to: work, personal, priority, shopping, or home
+- For priority, look for indicators like:
+  * "urgent", "asap", "!!!" (multiple exclamation points), "high priority" → "urgent"
+  * "high priority", "important", "!" (single exclamation) → "high"
+  * "medium", "normal" → "medium"
+  * "low", "whenever" → "low"
+  * If no priority indicators found, use null
+- For estimated_duration, parse time mentions like:
+  * "2hr", "2 hours", "2h" → 120 (minutes)
+  * "30 min", "30 minutes", "30m" → 30 (minutes)
+  * "1.5 hours" → 90 (minutes)
+  * Convert all time to minutes as an integer
+  * If no time estimate found, use null
 - If information is unclear or missing, use null for that field (except title)
 - Return ONLY the JSON object, no other text or explanation`;
 
@@ -140,6 +154,17 @@ Rules:
 
     // Validate and prepare task data
     const validLabels = ["work", "personal", "priority", "shopping", "home"];
+    const validPriorities = ["low", "medium", "high", "urgent"];
+    
+    // Parse estimated_duration - ensure it's an integer in minutes
+    let estimatedDuration = null;
+    if (extractedData.estimated_duration) {
+      const duration = parseInt(extractedData.estimated_duration);
+      if (!isNaN(duration) && duration > 0) {
+        estimatedDuration = duration;
+      }
+    }
+    
     const taskData: any = {
       title: extractedData.title.trim(),
       description: extractedData.description?.trim() || null,
@@ -147,6 +172,11 @@ Rules:
         ? extractedData.label
         : null,
       due_date: extractedData.due_date || null,
+      priority: extractedData.priority && validPriorities.includes(extractedData.priority)
+        ? extractedData.priority
+        : null,
+      estimated_duration: estimatedDuration,
+      created_via: "image_ocr",
       completed: false,
       user_id: user.id,
     };

@@ -25,10 +25,12 @@ export default function Dashboard() {
     title: string,
     description: string,
     label: Task["label"] | null,
+    priority: "low" | "medium" | "high" | "urgent" | null,
+    estimatedDuration: number | null,
     dueDate: Date | undefined,
     imageFile: File | null
   ) => {
-    await createTask(title, description, label, dueDate, imageFile);
+    await createTask(title, description, label, priority, estimatedDuration, dueDate, imageFile);
     await refreshTasks();
     console.log(`New Task Created: ${title}`);
     setIsDialogOpen(false);

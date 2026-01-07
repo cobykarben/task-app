@@ -231,6 +231,40 @@ function TaskForm() {
           </Select>
         </div>
         <div className="grid w-full items-center gap-1.5">
+          <Label>Priority</Label>
+          <Select
+            value={(task as any).priority || ""}
+            onValueChange={(value) =>
+              updateTask({ priority: value || null } as any)
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="urgent">Urgent</SelectItem>
+              <SelectItem value="">None</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid w-full items-center gap-1.5">
+          <Label>Estimated Duration (minutes)</Label>
+          <Input
+            type="number"
+            min="0"
+            placeholder="e.g., 30, 120"
+            value={(task as any).estimated_duration || ""}
+            onChange={(e) =>
+              updateTask({
+                estimated_duration: e.target.value ? parseInt(e.target.value) : null,
+              } as any)
+            }
+          />
+        </div>
+        <div className="grid w-full items-center gap-1.5">
           <Label>Due Date</Label>
           <Popover>
             <PopoverTrigger asChild>
