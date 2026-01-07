@@ -46,7 +46,14 @@ export function useTaskManager(taskId?: string): UseTaskManagerReturn {
 
         if (error) throw error;
         setTask(task);
-        setDate(task.due_date ? new Date(task.due_date) : undefined);
+        // Parse date as local date to avoid timezone shift issues
+        // If due_date is "2026-01-30", we want Jan 30 in local time, not UTC
+        if (task.due_date) {
+          const [year, month, day] = task.due_date.split("T")[0].split("-").map(Number);
+          setDate(new Date(year, month - 1, day)); // month is 0-indexed
+        } else {
+          setDate(undefined);
+        }
       } catch (error: any) {
         console.error(`Error fetching task ID ${taskId}:`, error);
         setError(error.message);
