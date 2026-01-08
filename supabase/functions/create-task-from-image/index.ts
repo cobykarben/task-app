@@ -74,16 +74,24 @@ Deno.serve(async (req) => {
     }
 
     // Call OpenAI Vision API to extract task information
-    const visionPrompt = `Analyze this handwritten sticky note image and extract task information. 
-Return ONLY a valid JSON object with this exact structure:
+    const visionPrompt = `Analyze this handwritten sticky note image and extract ALL task information. 
+Return ONLY a valid JSON object with this exact structure (replace the example values with actual extracted data):
 {
-  "title": "the task title or name",
-  "description": "any additional description or notes (optional, can be null)",
-  "due_date": "YYYY-MM-DD format if a date is mentioned, otherwise null",
-  "label": "one of these exact values if mentioned: work, personal, shopping, home, or null if not specified",
-  "priority": "--",
-  "estimated_duration": 45
+  "title": "extracted task title",
+  "description": "extracted description or null",
+  "due_date": "YYYY-MM-DD or null",
+  "label": "work/personal/shopping/home or null",
+  "priority": "-- or ! or !! or !!!",
+  "estimated_duration": 40
 }
+
+CRITICAL - Extract ALL fields that are visible in the image:
+- Title: Extract the main task name (required)
+- Description: Extract any additional notes, lists, or details
+- Due Date: Convert dates like "1/15/2026" or "Jan 15, 2026" to "2026-01-15" format
+- Label: Match to work, personal, shopping, or home based on task content
+- Priority: See mapping below (REQUIRED - always return one of the four values)
+- Estimated Duration: Extract time like "40 minutes" as integer 40, "2 hours" as 120, etc.
 
 IMPORTANT - Priority mapping (use these EXACT values: "--", "!", "!!", "!!!"):
 
@@ -106,14 +114,28 @@ Rules:
 - Extract the main task/title clearly - this is required
 - If a date is written, parse it to YYYY-MM-DD format (e.g., "Jan 15" becomes "2025-01-15", "next Friday" should be calculated to actual date)
 - For labels, match to: work, personal, shopping, or home (DO NOT use 'priority' as a label - priority is a separate field)
-- For estimated_duration, parse time mentions like:
-  * "2hr", "2 hours", "2h" → 120 (minutes)
-  * "30 min", "30 minutes", "30m" → 30 (minutes)
-  * "45 minutes" → 45 (minutes)
-  * "1.5 hours" → 90 (minutes)
-  * Convert all time to minutes as an integer
-  * If no time estimate found, use null
-- Priority MUST be one of these exact strings: "--", "!", "!!", "!!!"
+- For estimated_duration, parse time mentions and convert to minutes as an INTEGER:
+  * "40 minutes" → 40
+  * "40 min" → 40
+  * "40m" → 40
+  * "2hr", "2 hours", "2h" → 120
+  * "30 min", "30 minutes", "30m" → 30
+  * "45 minutes" → 45
+  * "1.5 hours" → 90
+  * "1 hour" → 60
+  * Always return an INTEGER (not a string), or null if no time found
+- For due_date, parse dates in various formats:
+  * "1/15/2026" → "2026-01-15"
+  * "Jan 15, 2026" → "2026-01-15"
+  * "01/15/2026" → "2026-01-15"
+  * "January 15, 2026" → "2026-01-15"
+  * Always use YYYY-MM-DD format
+- Priority MUST be one of these exact strings: "--", "!", "!!", "!!!" (ALWAYS return one of these, never null)
+- estimated_duration MUST be an integer (number, not string) or null
+- You MUST extract ALL visible information from the image - do not skip fields that are clearly visible
+- If you see "High Priority!!!" in the image, priority MUST be "!!!"
+- If you see "40 minutes" in the image, estimated_duration MUST be 40 (as a number)
+- If you see "1/15/2026" in the image, due_date MUST be "2026-01-15"
 - Return ONLY the JSON object, no other text or explanation`;
 
     console.log("📤 Sending image to OpenAI Vision API...");
@@ -154,6 +176,14 @@ Rules:
       }
       extractedData = JSON.parse(jsonMatch[0]);
       console.log(`📋 Parsed JSON:`, JSON.stringify(extractedData, null, 2));
+      console.log(`🔍 Extracted fields:`, {
+        title: extractedData.title,
+        description: extractedData.description,
+        due_date: extractedData.due_date,
+        label: extractedData.label,
+        priority: extractedData.priority,
+        estimated_duration: extractedData.estimated_duration,
+      });
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError);
       console.error("Raw response:", responseText);
@@ -171,17 +201,26 @@ Rules:
     
     // Parse estimated_duration - ensure it's an integer in minutes
     let estimatedDuration = null;
-    if (extractedData.estimated_duration) {
-      const duration = parseInt(extractedData.estimated_duration);
+    if (extractedData.estimated_duration !== null && extractedData.estimated_duration !== undefined) {
+      // Handle both string and number formats
+      const duration = typeof extractedData.estimated_duration === 'number' 
+        ? extractedData.estimated_duration 
+        : parseInt(String(extractedData.estimated_duration));
       if (!isNaN(duration) && duration > 0) {
         estimatedDuration = duration;
+        console.log(`⏱️ Parsed duration: ${estimatedDuration} minutes`);
+      } else {
+        console.warn(`⚠️ Invalid duration value: ${extractedData.estimated_duration}`);
       }
+    } else {
+      console.log(`⏱️ No duration found in extracted data`);
     }
     
     // Parse priority - default to "--" if invalid or missing
     const priority = extractedData.priority && validPriorities.includes(extractedData.priority)
       ? extractedData.priority
       : "--";
+    console.log(`🎯 Priority extracted: "${extractedData.priority}" → Final: "${priority}"`);
     
     const taskData: any = {
       title: extractedData.title.trim(),
@@ -206,7 +245,7 @@ Rules:
       }
     }
 
-    console.log(`📝 Extracted task data:`, taskData);
+    console.log(`📝 Final task data to save:`, JSON.stringify(taskData, null, 2));
 
     // Create the task
     const { data: task, error: taskError } = await supabaseClient
