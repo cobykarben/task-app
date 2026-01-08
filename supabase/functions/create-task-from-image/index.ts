@@ -113,7 +113,12 @@ Examples:
 Rules:
 - Extract the main task/title clearly - this is required
 - If a date is written, parse it to YYYY-MM-DD format (e.g., "Jan 15" becomes "2025-01-15", "next Friday" should be calculated to actual date)
-- For labels, match to: work, personal, shopping, or home (DO NOT use 'priority' as a label - priority is a separate field)
+- For labels, match to: work, personal, shopping, or home ONLY
+- CRITICAL: NEVER use "priority" as a label value - if you see "priority" mentioned, it refers to the priority field, NOT the label field
+- If the task is about shopping/buying things → "shopping"
+- If the task is about work/business → "work"
+- If the task is about personal/home life → "personal" or "home"
+- If unclear, use null for label
 - For estimated_duration, parse time mentions and convert to minutes as an INTEGER:
   * "40 minutes" → 40
   * "40 min" → 40
@@ -222,12 +227,27 @@ Rules:
       : "--";
     console.log(`🎯 Priority extracted: "${extractedData.priority}" → Final: "${priority}"`);
     
+    // Parse label - filter out "priority" if OpenAI mistakenly returns it
+    let label = null;
+    if (extractedData.label) {
+      const labelLower = extractedData.label.toLowerCase().trim();
+      // Explicitly reject "priority" as a label
+      if (labelLower === "priority") {
+        console.warn(`⚠️ OpenAI returned "priority" as label - rejecting it (priority is a separate field)`);
+        label = null;
+      } else if (validLabels.includes(labelLower)) {
+        label = labelLower;
+      } else {
+        console.warn(`⚠️ Invalid label "${extractedData.label}" - setting to null`);
+        label = null;
+      }
+    }
+    console.log(`🏷️ Label extracted: "${extractedData.label}" → Final: "${label}"`);
+    
     const taskData: any = {
       title: extractedData.title.trim(),
       description: extractedData.description?.trim() || null,
-      label: extractedData.label && validLabels.includes(extractedData.label)
-        ? extractedData.label
-        : null,
+      label: label,
       due_date: extractedData.due_date || null,
       priority: priority,
       estimated_duration: estimatedDuration,
