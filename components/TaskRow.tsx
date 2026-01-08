@@ -58,6 +58,11 @@ const TaskRow = ({ task, onDelete, onToggleComplete }: TaskRowProps) => {
       <TableCell className="py-2 whitespace-nowrap">
         {task.due_date ? formatDate(task.due_date) : ""}
       </TableCell>
+      <TableCell className="py-2 whitespace-nowrap">
+        {(task as any).estimated_duration
+          ? `${(task as any).estimated_duration} min`
+          : "--"}
+      </TableCell>
       <TableCell className="text-right py-2">
         <Link href={`/task?id=${task.task_id}`}>
           <Button variant="ghost" size="icon" className="h-8 w-8">

@@ -27,13 +27,6 @@ export const labels = [
     "text-color": "text-purple-800",
     "border-color": "border-purple-300",
   },
-  {
-    value: "priority",
-    label: "Priority",
-    "bg-color": "bg-red-100",
-    "text-color": "text-red-800",
-    "border-color": "border-red-300",
-  },
 ] as const;
 
 export type LabelType = (typeof labels)[number]["value"];

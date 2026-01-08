@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         });
 
         // Get label suggestion from OpenAI
-        const prompt = `Based on this task title: "${title}" and description: "${description}", suggest ONE of these labels: work, personal, priority, shopping, home. Reply with just the label word and nothing else.`;
+        const prompt = `Based on this task title: "${title}" and description: "${description}", suggest ONE of these labels: work, personal, shopping, home. Reply with just the label word and nothing else. DO NOT use 'priority' as a label.`;
 
         const completion = await openai.chat.completions.create({
           messages: [{ role: "user", content: prompt }],
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
         console.log(`✨ AI Suggested Label: ${suggestedLabel}`);
 
         // Validate the label
-        const validLabels = ["work", "personal", "priority", "shopping", "home"];
+        const validLabels = ["work", "personal", "shopping", "home"];
         label = validLabels.includes(suggestedLabel) ? suggestedLabel : null;
 
         // Update the task with the suggested label and created_via if we got one

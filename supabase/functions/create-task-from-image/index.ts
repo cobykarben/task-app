@@ -80,7 +80,7 @@ Return ONLY a valid JSON object with this exact structure:
   "title": "the task title or name",
   "description": "any additional description or notes (optional, can be null)",
   "due_date": "YYYY-MM-DD format if a date is mentioned, otherwise null",
-  "label": "one of these exact values if mentioned: work, personal, priority, shopping, home, or null if not specified",
+  "label": "one of these exact values if mentioned: work, personal, shopping, home, or null if not specified",
   "priority": "--",
   "estimated_duration": 45
 }
@@ -105,7 +105,7 @@ Examples:
 Rules:
 - Extract the main task/title clearly - this is required
 - If a date is written, parse it to YYYY-MM-DD format (e.g., "Jan 15" becomes "2025-01-15", "next Friday" should be calculated to actual date)
-- For labels, match to: work, personal, priority, shopping, or home
+- For labels, match to: work, personal, shopping, or home (DO NOT use 'priority' as a label - priority is a separate field)
 - For estimated_duration, parse time mentions like:
   * "2hr", "2 hours", "2h" → 120 (minutes)
   * "30 min", "30 minutes", "30m" → 30 (minutes)
@@ -166,7 +166,7 @@ Rules:
     }
 
     // Validate and prepare task data
-    const validLabels = ["work", "personal", "priority", "shopping", "home"];
+    const validLabels = ["work", "personal", "shopping", "home"];
     const validPriorities = ["--", "!", "!!", "!!!"];
     
     // Parse estimated_duration - ensure it's an integer in minutes
