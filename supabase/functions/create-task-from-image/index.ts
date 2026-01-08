@@ -81,26 +81,39 @@ Return ONLY a valid JSON object with this exact structure:
   "description": "any additional description or notes (optional, can be null)",
   "due_date": "YYYY-MM-DD format if a date is mentioned, otherwise null",
   "label": "one of these exact values if mentioned: work, personal, priority, shopping, home, or null if not specified",
-  "priority": "one of these exact values: '--', '!', '!!', '!!!', or '--' if not specified",
-  "estimated_duration": "integer number of minutes, or null if not specified"
+  "priority": "--",
+  "estimated_duration": 45
 }
+
+IMPORTANT - Priority mapping (use these EXACT values: "--", "!", "!!", "!!!"):
+
+Priority detection order (check in this exact order):
+1. If text contains "!!!" (three exclamation marks) OR "High Priority!!!" OR "urgent!!!" OR "asap!!!" → return "!!!"
+2. If text contains "High Priority" OR "high priority" OR "urgent" OR "asap" OR "critical" OR "very urgent" (even without exclamation marks) → return "!!!"
+3. If text contains "!!" (two exclamation marks) OR "important!!" → return "!!"
+4. If text contains "!" (single exclamation mark) OR "Low Priority" OR "low priority" OR "whenever" → return "!"
+5. If NO priority indicators found → return "--"
+
+Examples:
+- "High Priority!!!" → "!!!"
+- "High Priority" → "!!!"
+- "urgent" → "!!!"
+- "important!!" → "!!"
+- "Low priority!" → "!"
+- No priority mentioned → "--"
 
 Rules:
 - Extract the main task/title clearly - this is required
 - If a date is written, parse it to YYYY-MM-DD format (e.g., "Jan 15" becomes "2025-01-15", "next Friday" should be calculated to actual date)
 - For labels, match to: work, personal, priority, shopping, or home
-- For priority, look for indicators and map to symbols:
-  * "!!!", "urgent", "asap", "very urgent", "critical" → "!!!"
-  * "!!", "high priority", "important", multiple exclamation points → "!!"
-  * "!", "low priority", single exclamation, "whenever" → "!"
-  * If no priority indicators found or unclear, use "--"
 - For estimated_duration, parse time mentions like:
   * "2hr", "2 hours", "2h" → 120 (minutes)
   * "30 min", "30 minutes", "30m" → 30 (minutes)
+  * "45 minutes" → 45 (minutes)
   * "1.5 hours" → 90 (minutes)
   * Convert all time to minutes as an integer
   * If no time estimate found, use null
-- If information is unclear or missing, use null for that field (except title and priority which defaults to "--")
+- Priority MUST be one of these exact strings: "--", "!", "!!", "!!!"
 - Return ONLY the JSON object, no other text or explanation`;
 
     console.log("📤 Sending image to OpenAI Vision API...");
@@ -140,6 +153,7 @@ Rules:
         throw new Error("No JSON found in OpenAI response");
       }
       extractedData = JSON.parse(jsonMatch[0]);
+      console.log(`📋 Parsed JSON:`, JSON.stringify(extractedData, null, 2));
     } catch (parseError) {
       console.error("Error parsing OpenAI response:", parseError);
       console.error("Raw response:", responseText);
